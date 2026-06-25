@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { FaArrowRight, FaStar } from 'react-icons/fa';
-import OpenAI from 'openai';
-import RoomDetailModal from '../components/RoomDetailModal';
+import { FaMobileAlt, FaMapMarkerAlt, FaUmbrellaBeach, FaArrowRight, FaStar } from 'react-icons/fa';
 
 
 // Data structures
@@ -148,6 +146,7 @@ const amenities = [
 ];
 
 export default function Home() {
+  const { isAuthenticated, user } = useAuth();
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [questionInput, setQuestionInput] = useState('');
@@ -1092,6 +1091,8 @@ export default function Home() {
                     type="text"
                     className="input-field mt-2"
                     placeholder="Your name"
+                    defaultValue={isAuthenticated ? user?.name : ''}
+                    disabled={isAuthenticated}
                   />
                 </div>
 
@@ -1101,21 +1102,100 @@ export default function Home() {
                     type="email"
                     className="input-field mt-2"
                     placeholder="your@email.com"
+                    defaultValue={isAuthenticated ? user?.email : ''}
+                    disabled={isAuthenticated}
                   />
                 </div>
 
                 <button type="submit" className="btn-primary w-full justify-center py-4 text-base">
-                  Request Availability
+                  {isAuthenticated ? 'Book Now' : 'Request Availability'}
                 </button>
 
                 <p className="text-center text-xs text-slate-500">
-                  We'll respond within 2 hours during business hours
+                  {isAuthenticated 
+                    ? 'Complete your booking instantly as a signed-in user'
+                    : 'Sign in to book instantly or request availability as a guest'
+                  }
                 </p>
               </form>
             </motion.div>
           </div>
         </div>
       </section>
+
+      {/* Special Offers Section - Only for signed-in users */}
+      {isAuthenticated && (
+        <section className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 space-y-4"
+          >
+            <p className="section-subtitle">Exclusive Member Benefits</p>
+            <h2 className="section-title">Special Offers & Discounts</h2>
+            <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
+              As a valued member, enjoy exclusive discounts and special offers on your bookings.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="card-luxury border-gold/30 relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-4 bg-gold text-midnight px-3 py-1 rounded-full text-xs font-bold">
+                15% OFF
+              </div>
+              <div className="mb-4 text-4xl">🎉</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Member Discount</h3>
+              <p className="text-sm leading-relaxed text-slate-400 mb-4">
+                Save 15% on all room bookings as a registered member
+              </p>
+              <p className="text-xs text-gold font-medium">Auto-applied at checkout</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="card-luxury border-gold/30 relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-4 bg-gold text-midnight px-3 py-1 rounded-full text-xs font-bold">
+                FREE
+              </div>
+              <div className="mb-4 text-4xl">🍳</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Complimentary Breakfast</h3>
+              <p className="text-sm leading-relaxed text-slate-400 mb-4">
+                Enjoy free breakfast for stays of 3+ nights
+              </p>
+              <p className="text-xs text-gold font-medium">Valid for all room types</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="card-luxury border-gold/30 relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-4 bg-gold text-midnight px-3 py-1 rounded-full text-xs font-bold">
+                VIP
+              </div>
+              <div className="mb-4 text-4xl">✨</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Rooftop Bar Access</h3>
+              <p className="text-sm leading-relaxed text-slate-400 mb-4">
+                Exclusive VIP access to rooftop bar with complimentary welcome drink
+              </p>
+              <p className="text-xs text-gold font-medium">One-time per stay</p>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
