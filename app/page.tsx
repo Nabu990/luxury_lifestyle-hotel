@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { FaMobileAlt, FaMapMarkerAlt, FaUmbrellaBeach, FaArrowRight, FaStar } from 'react-icons/fa';
+import { FaArrowRight, FaStar } from 'react-icons/fa';
+import OpenAI from 'openai';
+import RoomDetailModal from '../components/RoomDetailModal';
 
 
 // Data structures
@@ -39,28 +41,103 @@ const roomCards = [
     description: 'Elegant room with private balcony and pool access.',
     image: '/images/room.webp',
     rating: 4.8,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
+    size: '45 m²',
+    capacity: 2,
+  },
+  {
+    name: 'Deluxe Room',
+    price: '$120',
+    description: 'Spacious room with modern amenities and city views.',
+    image: '/images/room1.webp',
+    rating: 4.7,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
+    size: '50 m²',
+    capacity: 2,
   },
   {
     name: 'Family Apartment',
     price: '$252',
     description: 'Spacious suite with kitchenette and living area.',
-    image: '/images/hotel-view.webp',
+    image: '/images/room2.webp',
     rating: 4.9,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Kitchenette', 'Bathtub', 'King Bed'],
+    size: '85 m²',
+    capacity: 4,
   },
   {
     name: 'Executive Suite',
     price: '$297',
     description: 'Luxury suite with premium amenities and privacy.',
-    image: '/images/vip-bar.webp',
+    image: '/images/room3.jpg',
     rating: 5.0,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed'],
+    size: '95 m²',
+    capacity: 3,
+  },
+  {
+    name: 'Luxury Suite',
+    price: '$350',
+    description: 'Ultra-luxury suite with panoramic views and exclusive services.',
+    image: '/images/room4.jpg',
+    rating: 5.0,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed', 'Mini Bar'],
+    size: '120 m²',
+    capacity: 4,
+  },
+  {
+    name: 'Master Suite',
+    price: '$420',
+    description: 'Premium master suite with separate living area and premium amenities.',
+    image: '/images/master-room.jpg',
+    rating: 5.0,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed', 'Mini Bar', 'Jacuzzi'],
+    size: '150 m²',
+    capacity: 4,
+  },
+  {
+    name: 'Aesthetic Bedroom',
+    price: '$180',
+    description: 'Beautifully designed room with aesthetic touches and comfort.',
+    image: '/images/luxury-aesthetic-bedroom.jpg',
+    rating: 4.8,
+    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
+    size: '55 m²',
+    capacity: 2,
   },
 ];
 
 const gallery = [
-  { src: '/images/front-view.jpg', alt: 'Hotel front view', caption: 'Grand Entrance' },
+  { src: '/images/front-view.webp', alt: 'Hotel front view', caption: 'Grand Entrance' },
+  { src: '/images/hotel-view.webp', alt: 'Hotel exterior', caption: 'Exterior View' },
+  { src: '/images/side-view.webp', alt: 'Hotel side view', caption: 'Side View' },
+  { src: '/images/out-side-night-view.webp', alt: 'Night view', caption: 'Night View' },
   { src: '/images/bar-day.webp', alt: 'Daytime bar area', caption: 'Rooftop Lounge' },
-  { src: '/images/room.webp', alt: 'Hotel room interior', caption: 'Suite Interiors' },
+  { src: '/images/bar.webp', alt: 'Bar area', caption: 'Bar Experience' },
   { src: '/images/vip-bar.webp', alt: 'VIP bar lounge', caption: 'VIP Bar' },
+  { src: '/images/dinning-area.webp', alt: 'Dining area', caption: 'Dining Area' },
+  { src: '/images/room.webp', alt: 'Hotel room interior', caption: 'Suite Interiors' },
+  { src: '/images/room1.webp', alt: 'Room interior', caption: 'Premium Room' },
+  { src: '/images/room2.webp', alt: 'Room interior', caption: 'Deluxe Room' },
+  { src: '/images/room3.jpg', alt: 'Room interior', caption: 'Executive Room' },
+  { src: '/images/room4.jpg', alt: 'Room interior', caption: 'Luxury Suite' },
+  { src: '/images/luxury-aesthetic-bedroom.jpg', alt: 'Bedroom', caption: 'Master Bedroom' },
+  { src: '/images/master-room.jpg', alt: 'Master room', caption: 'Master Suite' },
+  { src: '/images/gym.jpg', alt: 'Gym facility', caption: 'Fitness Center' },
+  { src: '/images/gym1.jpg', alt: 'Gym equipment', caption: 'Gym Equipment' },
+  { src: '/images/gym2.jpg', alt: 'Gym area', caption: 'Workout Area' },
+  { src: '/images/spa.jpg', alt: 'Spa facility', caption: 'Spa & Wellness' },
+  { src: '/images/spa1.jpg', alt: 'Spa treatment', caption: 'Spa Treatment' },
+  { src: '/images/spa2.jpg', alt: 'Spa relaxation', caption: 'Relaxation Area' },
+  { src: '/images/spa3.jpg', alt: 'Spa massage', caption: 'Massage Therapy' },
+  { src: '/images/bathroom.webp', alt: 'Bathroom', caption: 'Modern Bathroom' },
+  { src: '/images/bathroom1.jpg', alt: 'Bathroom', caption: 'Luxury Bath' },
+  { src: '/images/bathroom2.jpg', alt: 'Bathroom', caption: 'Spa Bathroom' },
+  { src: '/images/bathroom3.jpg', alt: 'Bathroom', caption: 'Premium Bath' },
+  { src: '/images/shower.webp', alt: 'Shower', caption: 'Rain Shower' },
+  { src: '/images/kitchen.webp', alt: 'Kitchen', caption: 'Modern Kitchen' },
+  { src: '/images/kitchen1.webp', alt: 'Kitchen', caption: 'Gourmet Kitchen' },
+  { src: '/images/kitchen2.webp', alt: 'Kitchen', caption: 'Full Kitchen' },
 ];
 
 const amenities = [
@@ -73,7 +150,129 @@ const amenities = [
 export default function Home() {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [questionInput, setQuestionInput] = useState('');
+  const [assistantResponse, setAssistantResponse] = useState('');
+  const [isAnswering, setIsAnswering] = useState(false);
+  const [roomSearch, setRoomSearch] = useState('');
+  const [signedIn, setSignedIn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  const getAiAnswer = useCallback(async (query: string) => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) {
+      return 'Please ask a question about our rooms, amenities, check-in, or services.';
+    }
+
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+
+      if (!apiKey) {
+        return 'API key is missing. Please check your .env.local file.';
+      }
+
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful concierge assistant for Lifestyle Luxury Hotel & Residence in Monrovia, Liberia. Provide friendly, professional responses about rooms, amenities, check-in/check-out times, dining, and hotel services. Keep responses concise and helpful.',
+          },
+          {
+            role: 'user',
+            content: query,
+          },
+        ],
+        max_tokens: 150,
+        temperature: 0.7,
+      });
+
+      return response.choices[0]?.message?.content || 'I apologize, but I could not generate a response. Please try again.';
+    } catch (error: any) {
+      console.error('OpenAI API error:', error);
+      
+      // Fallback to hardcoded responses if API fails
+      if (normalized.includes('breakfast') || normalized.includes('meal')) {
+        return 'Breakfast is served daily from 6:30 AM to 10:30 AM in the rooftop dining room. Room service is also available for early departures.';
+      }
+      if (normalized.includes('check-in') || normalized.includes('check in') || normalized.includes('arrival')) {
+        return 'Check-in begins at 2:00 PM. If you arrive earlier, our concierge can store your luggage while your room is prepared.';
+      }
+      if (normalized.includes('check-out') || normalized.includes('check out') || normalized.includes('departure')) {
+        return 'Check-out is at 11:00 AM. If you need a later departure, please ask the front desk and we will do our best to accommodate you.';
+      }
+      if (normalized.includes('pool')) {
+        return 'Our outdoor pool is open daily from 7:00 AM to 10:00 PM. Pool towels and lounge service are included for all guests.';
+      }
+      if (normalized.includes('spa') || normalized.includes('massage')) {
+        return 'We offer spa treatments and massage services by appointment. Please contact the concierge for availability and pricing.';
+      }
+      if (normalized.includes('shuttle') || normalized.includes('airport') || normalized.includes('transport')) {
+        return 'We provide an airport shuttle service at scheduled times. Please contact us before arrival to reserve your transfer.';
+      }
+      if (normalized.includes('availability') || normalized.includes('room') || normalized.includes('book')) {
+        return 'Rooms are available in premium pool view, family apartment, and executive suite categories. For exact availability and rates, use the booking form or contact our concierge.';
+      }
+      if (normalized.includes('restaurant') || normalized.includes('dining') || normalized.includes('bar')) {
+        return 'Our rooftop bar opens at 4:00 PM daily, with seasonal cocktails and light bites. Dining reservations are recommended for weekend evenings.';
+      }
+
+      return 'I can help with room details, booking, dining, amenities, and hotel services. Please ask another question.';
+    }
+  }, []);
+
+  const handleAskQuestion = useCallback(async (question: string) => {
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    setIsAnswering(true);
+    setAssistantResponse('Searching our hotel concierge knowledge...');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const response = await getAiAnswer(trimmed);
+    setAssistantResponse(response);
+    setIsAnswering(false);
+  }, [getAiAnswer]);
+
+  const handleSignIn = () => {
+    setSignedIn(true);
+    setMobileMenuOpen(false);
+  };
+
+  const handleSignOut = () => {
+    setSignedIn(false);
+    setMobileMenuOpen(false);
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen((current) => !current);
+  };
+
+  const handleRoomClick = (room: any) => {
+    setSelectedRoom(room);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRoom(null);
+  };
+
+  const mapEmbedUrl = 'https://www.google.com/maps?q=Lifestyle+Luxury+Hotel+%26+Residence+Monrovia+Liberia&output=embed';
+
+  const filteredRooms = roomCards.filter((room) => {
+    const query = roomSearch.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      room.name.toLowerCase().includes(query) ||
+      room.description.toLowerCase().includes(query)
+    );
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -111,16 +310,110 @@ export default function Home() {
   const speakVoicePrompt = () => {
     if (typeof window === 'undefined') return;
     const utterance = new SpeechSynthesisUtterance(
-      'Welcome to Lifestyle Luxury Hotel & Residence. Please say your booking dates, room preferences, or ask for more details about our amenities.'
+      'Welcome to Lifestyle Luxury Hotel & Residence. Please ask a question about our rooms, amenities, or services.'
     );
     utterance.lang = 'en-US';
     window.speechSynthesis.speak(utterance);
   };
 
+  useEffect(() => {
+    if (!voiceTranscript) return;
+    handleAskQuestion(voiceTranscript);
+  }, [voiceTranscript, handleAskQuestion]);
+
   return (
     <main className="min-h-screen bg-midnight text-pearl">
+      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+          <a href="#top" className="text-lg font-semibold tracking-tight text-white">
+            Lifestyle Luxury
+          </a>
+
+          <div className="hidden items-center gap-8 md:flex">
+            <a href="#experience" className="text-sm font-medium text-slate-200 transition hover:text-white">
+              Experience
+            </a>
+            <a href="#book" className="text-sm font-medium text-slate-200 transition hover:text-white">
+              Booking
+            </a>
+            <a href="#ai" className="text-sm font-medium text-slate-200 transition hover:text-white">
+              AI Assistant
+            </a>
+            <a href="https://wa.me/231770381510" target="_blank" rel="noreferrer" className="text-sm font-medium text-gold transition hover:text-white">
+              WhatsApp
+            </a>
+            {signedIn && (
+              <a href="#book" className="text-sm font-medium text-slate-200 transition hover:text-white">
+                My Booking
+              </a>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {signedIn ? (
+              <button
+                onClick={handleSignOut}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 md:inline-flex"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="hidden rounded-full bg-gold px-4 py-2 text-sm font-semibold text-midnight transition hover:bg-white md:inline-flex"
+              >
+                Sign In
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleMobileMenu}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 md:hidden"
+              aria-label="Toggle navigation menu"
+            >
+              <span className="text-xl">{mobileMenuOpen ? '×' : '☰'}</span>
+            </button>
+          </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <div className="border-t border-white/10 bg-slate-950/95 px-6 py-4 md:hidden">
+            <div className="space-y-3">
+              <a href="#experience" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
+                Experience
+              </a>
+              <a href="#book" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
+                Booking
+              </a>
+              <a href="#ai" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
+                AI Assistant
+              </a>
+              <a href="https://wa.me/231770381510" target="_blank" rel="noreferrer" className="block text-sm font-medium text-gold transition hover:text-white">
+                WhatsApp
+              </a>
+              {signedIn ? (
+                <button
+                  onClick={handleSignOut}
+                  className="w-full rounded-full bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="w-full rounded-full bg-gold px-4 py-2 text-sm font-semibold text-midnight transition hover:bg-white"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-white/10">
+      <section className="relative overflow-hidden border-b border-white/10" id="top">
         <div className="absolute inset-0 bg-hero-gradient opacity-90" />
         <div className="relative mx-auto max-w-7xl px-6 py-32 lg:px-10">
           <motion.div
@@ -140,6 +433,17 @@ export default function Home() {
                   ✨ Luxury Living
                 </span>
               </motion.div>
+
+              {signedIn && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25, duration: 0.6 }}
+                  className="inline-flex rounded-full border border-gold/20 bg-gold/10 px-4 py-2 text-sm font-medium text-gold"
+                >
+                  Welcome back! Access your booking and WhatsApp concierge from the top menu.
+                </motion.div>
+              )}
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -259,10 +563,10 @@ export default function Home() {
           viewport={{ once: true }}
           className="mb-16 space-y-4"
         >
-          <p className="section-subtitle">Visual Highlights</p>
-          <h2 className="section-title">Experience Through Curated Imagery</h2>
+          <p className="section-subtitle">Photo Gallery</p>
+          <h2 className="section-title">Discover the Space</h2>
           <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
-            Explore our rooftop bar, poolside suites, and refined interiors through professional photography.
+            Explore our property through a curated gallery of premium interiors, rooftop views, and bespoke guest experiences.
           </p>
         </motion.div>
 
@@ -301,23 +605,47 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-16 space-y-4"
+            className="mb-10 space-y-4"
           >
-            <p className="section-subtitle">Accommodations</p>
-            <h2 className="section-title">Premium Room Options</h2>
+            <p className="section-subtitle">Room Listings</p>
+            <h2 className="section-title">Find Your Ideal Suite</h2>
+            <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
+              Search our available room types and compare features, pricing, and amenities to find the perfect stay.
+            </p>
           </motion.div>
 
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-200">Search room listings</p>
+              <input
+                type="text"
+                value={roomSearch}
+                onChange={(event) => setRoomSearch(event.target.value)}
+                placeholder="Search by suite, amenities, or type"
+                className="input-field mt-3 sm:mt-2"
+              />
+            </div>
+            <p className="text-sm text-slate-400">
+              {filteredRooms.length} room type{filteredRooms.length === 1 ? '' : 's'} matching your query.
+            </p>
+          </div>
+
           <div className="grid gap-8 md:grid-cols-3">
-            {roomCards.map((room, idx) => (
-              <motion.div
-                key={room.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1, duration: 0.6 }}
-                whileHover={{ y: -8 }}
-                className="card-luxury overflow-hidden"
-              >
+            {filteredRooms.length === 0 ? (
+              <div className="col-span-full rounded-3xl border border-white/10 bg-slate-950/80 p-10 text-center text-slate-300">
+                No rooms match that search yet. Try simpler terms like “pool”, “suite”, or “family”.
+              </div>
+            ) : (
+              filteredRooms.map((room, idx) => (
+                <motion.div
+                  key={room.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1, duration: 0.6 }}
+                  whileHover={{ y: -8 }}
+                  className="card-luxury overflow-hidden"
+                >
                 <div className="relative h-48 overflow-hidden rounded-lg bg-slate-900 mb-4">
                   <Image
                     src={room.image}
@@ -341,12 +669,59 @@ export default function Home() {
                   </div>
                   <p className="text-3xl font-bold text-white mb-2">{room.price}<span className="text-lg text-slate-400">/night</span></p>
                   <p className="text-sm leading-relaxed text-slate-400">{room.description}</p>
-                  <button className="mt-6 w-full rounded-lg bg-gold/10 py-3 text-sm font-semibold text-gold transition hover:bg-gold hover:text-midnight">
+                  <button 
+                    onClick={() => handleRoomClick(room)}
+                    className="mt-6 w-full rounded-lg bg-gold/10 py-3 text-sm font-semibold text-gold transition hover:bg-gold hover:text-midnight"
+                  >
                     View Room Details
                   </button>
                 </div>
               </motion.div>
-            ))}
+            ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Google Maps Section */}
+      <section className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16 space-y-4"
+        >
+          <p className="section-subtitle">Location</p>
+          <h2 className="section-title">Find Us in Monrovia</h2>
+          <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
+            See where our luxury boutique hotel sits in the heart of Monrovia and plan your arrival with ease.
+          </p>
+        </motion.div>
+
+        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
+          <div className="rounded-[32px] border border-white/10 bg-slate-950/80 p-6 shadow-glow">
+            <div className="overflow-hidden rounded-3xl border border-white/10">
+              <iframe
+                title="Monrovia Hotel Location"
+                src={mapEmbedUrl}
+                className="h-96 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-6 rounded-[32px] border border-white/10 bg-slate-950/80 p-8 shadow-glow">
+            <div>
+              <p className="section-subtitle">Travel Notes</p>
+              <h3 className="text-2xl font-semibold text-white">Easy access from the city center</h3>
+            </div>
+            <ul className="space-y-4 text-sm text-slate-400">
+              <li>• 15 minutes from Roberts International Airport</li>
+              <li>• Central Monrovia location with nearby dining and shopping</li>
+              <li>• Complimentary shuttle reservations available</li>
+              <li>• Concierge support for local tours and transport</li>
+            </ul>
           </div>
         </div>
       </section>
@@ -381,7 +756,7 @@ export default function Home() {
       </section>
 
       {/* AI Booking Assistant Section */}
-      <section className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
+      <section id="ai" className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -517,6 +892,29 @@ export default function Home() {
                 Try Voice Assistant
               </button>
 
+              <div className="grid gap-4">
+                <label className="block text-sm font-medium text-slate-200">
+                  Ask a question
+                </label>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={questionInput}
+                    onChange={(event) => setQuestionInput(event.target.value)}
+                    placeholder="Ask about rooms, amenities, or booking"
+                    className="input-field flex-1 min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAskQuestion(questionInput)}
+                    disabled={!questionInput.trim() || isAnswering}
+                    className="inline-flex flex-1 items-center justify-center rounded-lg bg-blue-500/20 py-3 text-sm font-semibold text-blue-400 transition hover:bg-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isAnswering ? 'Answering...' : 'Ask Assistant'}
+                  </button>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
@@ -540,6 +938,13 @@ export default function Home() {
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
                   <p className="font-medium text-white">Recognized Voice Input</p>
                   <p className="mt-2">{voiceTranscript}</p>
+                </div>
+              )}
+
+              {assistantResponse && (
+                <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 text-sm text-slate-100">
+                  <p className="font-medium text-white">Assistant Answer</p>
+                  <p className="mt-2">{assistantResponse}</p>
                 </div>
               )}
             </div>
@@ -776,6 +1181,12 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      <RoomDetailModal
+        room={selectedRoom}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </main>
   );
 }
