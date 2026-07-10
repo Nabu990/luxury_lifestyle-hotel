@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { FaMobileAlt, FaMapMarkerAlt, FaUmbrellaBeach, FaArrowRight, FaStar } from 'react-icons/fa';
+import RoomDetailModal from '../components/RoomDetailModal';
+import { getRooms } from '../lib/data-manager';
 
 
 // Data structures
@@ -29,79 +31,6 @@ const features = [
     title: 'Direct Bookings',
     description: 'Premium experience that converts site visitors into confirmed reservations.',
     icon: '📅',
-  },
-];
-
-const roomCards = [
-  {
-    name: 'Premium Pool View',
-    price: '$96',
-    description: 'Elegant room with private balcony and pool access.',
-    image: '/images/room.webp',
-    rating: 4.8,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
-    size: '45 m²',
-    capacity: 2,
-  },
-  {
-    name: 'Deluxe Room',
-    price: '$120',
-    description: 'Spacious room with modern amenities and city views.',
-    image: '/images/room1.webp',
-    rating: 4.7,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
-    size: '50 m²',
-    capacity: 2,
-  },
-  {
-    name: 'Family Apartment',
-    price: '$252',
-    description: 'Spacious suite with kitchenette and living area.',
-    image: '/images/room2.webp',
-    rating: 4.9,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Kitchenette', 'Bathtub', 'King Bed'],
-    size: '85 m²',
-    capacity: 4,
-  },
-  {
-    name: 'Executive Suite',
-    price: '$297',
-    description: 'Luxury suite with premium amenities and privacy.',
-    image: '/images/room3.jpg',
-    rating: 5.0,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed'],
-    size: '95 m²',
-    capacity: 3,
-  },
-  {
-    name: 'Luxury Suite',
-    price: '$350',
-    description: 'Ultra-luxury suite with panoramic views and exclusive services.',
-    image: '/images/room4.jpg',
-    rating: 5.0,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed', 'Mini Bar'],
-    size: '120 m²',
-    capacity: 4,
-  },
-  {
-    name: 'Master Suite',
-    price: '$420',
-    description: 'Premium master suite with separate living area and premium amenities.',
-    image: '/images/master-room.jpg',
-    rating: 5.0,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'Bathtub', 'King Bed', 'Mini Bar', 'Jacuzzi'],
-    size: '150 m²',
-    capacity: 4,
-  },
-  {
-    name: 'Aesthetic Bedroom',
-    price: '$180',
-    description: 'Beautifully designed room with aesthetic touches and comfort.',
-    image: '/images/luxury-aesthetic-bedroom.jpg',
-    rating: 4.8,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Coffee Maker', 'King Bed'],
-    size: '55 m²',
-    capacity: 2,
   },
 ];
 
@@ -146,7 +75,6 @@ const amenities = [
 ];
 
 export default function Home() {
-  const { isAuthenticated, user } = useAuth();
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [questionInput, setQuestionInput] = useState('');
@@ -157,7 +85,12 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [roomCards, setRoomCards] = useState<any[]>([]);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    setRoomCards(getRooms());
+  }, []);
 
   const getAiAnswer = useCallback(async (query: string) => {
     const normalized = query.trim().toLowerCase();
@@ -322,94 +255,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-midnight text-pearl">
-      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-          <a href="#top" className="text-lg font-semibold tracking-tight text-white">
-            Lifestyle Luxury
-          </a>
-
-          <div className="hidden items-center gap-8 md:flex">
-            <a href="#experience" className="text-sm font-medium text-slate-200 transition hover:text-white">
-              Experience
-            </a>
-            <a href="#book" className="text-sm font-medium text-slate-200 transition hover:text-white">
-              Booking
-            </a>
-            <a href="#ai" className="text-sm font-medium text-slate-200 transition hover:text-white">
-              AI Assistant
-            </a>
-            <a href="https://wa.me/231770381510" target="_blank" rel="noreferrer" className="text-sm font-medium text-gold transition hover:text-white">
-              WhatsApp
-            </a>
-            {signedIn && (
-              <a href="#book" className="text-sm font-medium text-slate-200 transition hover:text-white">
-                My Booking
-              </a>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {signedIn ? (
-              <button
-                onClick={handleSignOut}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 md:inline-flex"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <button
-                onClick={handleSignIn}
-                className="hidden rounded-full bg-gold px-4 py-2 text-sm font-semibold text-midnight transition hover:bg-white md:inline-flex"
-              >
-                Sign In
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={toggleMobileMenu}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 md:hidden"
-              aria-label="Toggle navigation menu"
-            >
-              <span className="text-xl">{mobileMenuOpen ? '×' : '☰'}</span>
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="border-t border-white/10 bg-slate-950/95 px-6 py-4 md:hidden">
-            <div className="space-y-3">
-              <a href="#experience" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
-                Experience
-              </a>
-              <a href="#book" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
-                Booking
-              </a>
-              <a href="#ai" onClick={toggleMobileMenu} className="block text-sm font-medium text-slate-200 transition hover:text-white">
-                AI Assistant
-              </a>
-              <a href="https://wa.me/231770381510" target="_blank" rel="noreferrer" className="block text-sm font-medium text-gold transition hover:text-white">
-                WhatsApp
-              </a>
-              {signedIn ? (
-                <button
-                  onClick={handleSignOut}
-                  className="w-full rounded-full bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-                >
-                  Sign Out
-                </button>
-              ) : (
-                <button
-                  onClick={handleSignIn}
-                  className="w-full rounded-full bg-gold px-4 py-2 text-sm font-semibold text-midnight transition hover:bg-white"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-white/10" id="top">
@@ -1091,8 +936,8 @@ export default function Home() {
                     type="text"
                     className="input-field mt-2"
                     placeholder="Your name"
-                    defaultValue={isAuthenticated ? user?.name : ''}
-                    disabled={isAuthenticated}
+                    defaultValue={signedIn ? '' : ''}
+                    disabled={signedIn}
                   />
                 </div>
 
@@ -1102,17 +947,17 @@ export default function Home() {
                     type="email"
                     className="input-field mt-2"
                     placeholder="your@email.com"
-                    defaultValue={isAuthenticated ? user?.email : ''}
-                    disabled={isAuthenticated}
+                    defaultValue={signedIn ? '' : ''}
+                    disabled={signedIn}
                   />
                 </div>
 
                 <button type="submit" className="btn-primary w-full justify-center py-4 text-base">
-                  {isAuthenticated ? 'Book Now' : 'Request Availability'}
+                  {signedIn ? 'Book Now' : 'Request Availability'}
                 </button>
 
                 <p className="text-center text-xs text-slate-500">
-                  {isAuthenticated 
+                  {signedIn 
                     ? 'Complete your booking instantly as a signed-in user'
                     : 'Sign in to book instantly or request availability as a guest'
                   }
@@ -1124,7 +969,7 @@ export default function Home() {
       </section>
 
       {/* Special Offers Section - Only for signed-in users */}
-      {isAuthenticated && (
+      {signedIn && (
         <section className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

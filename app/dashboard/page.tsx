@@ -1,47 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import ProtectedRoute from '@/components/protected-route';
 import { motion } from 'framer-motion';
 import { FaCalendarAlt, FaHeart, FaStar, FaUser, FaClock, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-
-// Mock booking data
-const mockBookings = [
-  {
-    id: '1',
-    roomName: 'Premium Pool View',
-    checkIn: '2024-07-15',
-    checkOut: '2024-07-18',
-    guests: 2,
-    status: 'confirmed',
-    totalPrice: 288,
-  },
-  {
-    id: '2',
-    roomName: 'Executive Suite',
-    checkIn: '2024-08-01',
-    checkOut: '2024-08-05',
-    guests: 2,
-    status: 'pending',
-    totalPrice: 1188,
-  },
-];
-
-// Mock reviews data
-const mockReviews = [
-  {
-    id: '1',
-    roomName: 'Premium Pool View',
-    rating: 5,
-    comment: 'Absolutely stunning room with amazing pool views!',
-    date: '2024-06-20',
-  },
-];
+import { getBookings, getReviews, getRooms, deleteBooking } from '@/lib/data-manager';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'bookings' | 'reviews' | 'profile'>('bookings');
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const allBookings = getBookings();
+    const allReviews = getReviews();
+    const allRooms = getRooms();
+    
+    // Filter bookings for current user
+    const userBookings = allBookings.filter(b => b.userId === user?.id);
+    const userReviews = allReviews.filter(r => r.userId === user?.id);
+    
+    setBookings(userBookings);
+    setReviews(userReviews);
+    setRooms(allRooms);
+  };
+
+  const getRoomName = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    return room?.name || 'Unknown Room';
+  };
+
+  const handleCancelBooking = (bookingId: string) => {
+    if (confirm('Are you sure you want to cancel this booking?')) {
+      deleteBooking(bookingId);
+      loadData();
+    }
+  };
 
   return (
     <ProtectedRoute requiredRole="user">
@@ -70,7 +71,7 @@ export default function DashboardPage() {
                   <FaCalendarAlt className="h-6 w-6 text-gold" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{mockBookings.length}</p>
+                  <p className="text-2xl font-bold text-white">{bookings.length}</p>
                   <p className="text-sm text-slate-400">Total Bookings</p>
                 </div>
               </div>
@@ -83,7 +84,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">
-                    {mockBookings.filter(b => b.status === 'confirmed').length}
+                    {bookings.filter((b: any) => b.status === 'confirmed').length}
                   </p>
                   <p className="text-sm text-slate-400">Confirmed</p>
                 </div>
@@ -96,7 +97,7 @@ export default function DashboardPage() {
                   <FaStar className="h-6 w-6 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{mockReviews.length}</p>
+                  <p className="text-2xl font-bold text-white">{reviews.length}</p>
                   <p className="text-sm text-slate-400">Reviews</p>
                 </div>
               </div>
@@ -152,15 +153,15 @@ export default function DashboardPage() {
           >
             {activeTab === 'bookings' && (
               <div className="space-y-4">
-                {mockBookings.map((booking) => (
+                {bookings.map((booking: any) => (
                   <div key={booking.id} className="card-luxury">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white">{booking.roomName}</h3>
+                        <h3 className="text-lg font-semibold text-white">{getRoomName(booking.roomId)}</h3>
                         <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-400">
                           <span className="flex items-center gap-1">
                             <FaCalendarAlt className="text-xs" />
-                            {booking.checkIn} - {booking.checkOut}
+                            {new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <FaUser className="text-xs" />
@@ -174,13 +175,15 @@ export default function DashboardPage() {
                           className={`rounded-full px-3 py-1 text-xs font-medium ${
                             booking.status === 'confirmed'
                               ? 'bg-green-500/20 text-green-400'
+                              : booking.status === 'cancelled'
+                              ? 'bg-red-500/20 text-red-400'
                               : 'bg-yellow-500/20 text-yellow-400'
                           }`}
                         >
                           {booking.status}
                         </span>
                         {booking.status === 'pending' && (
-                          <button className="btn-secondary py-2 px-4 text-xs">
+                          <button onClick={() => handleCancelBooking(booking.id)} className="btn-secondary py-2 px-4 text-xs">
                             Cancel
                           </button>
                         )}
@@ -188,10 +191,10 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                {mockBookings.length === 0 && (
+                {bookings.length === 0 && (
                   <div className="card-luxury text-center py-12">
                     <p className="text-slate-400">No bookings yet</p>
-                    <a href="#book" className="btn-primary mt-4 inline-flex">
+                    <a href="/" className="btn-primary mt-4 inline-flex">
                       Book Your First Stay
                     </a>
                   </div>
@@ -201,11 +204,11 @@ export default function DashboardPage() {
 
             {activeTab === 'reviews' && (
               <div className="space-y-4">
-                {mockReviews.map((review) => (
+                {reviews.map((review: any) => (
                   <div key={review.id} className="card-luxury">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-semibold text-white">{review.roomName}</h3>
+                        <h3 className="font-semibold text-white">{getRoomName(review.roomId)}</h3>
                         <div className="mt-2 flex items-center gap-2">
                           {[...Array(5)].map((_, i) => (
                             <FaStar
@@ -217,12 +220,12 @@ export default function DashboardPage() {
                           ))}
                         </div>
                         <p className="mt-2 text-sm text-slate-300">{review.comment}</p>
-                        <p className="mt-2 text-xs text-slate-500">{review.date}</p>
+                        <p className="mt-2 text-xs text-slate-500">{new Date(review.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </div>
                 ))}
-                {mockReviews.length === 0 && (
+                {reviews.length === 0 && (
                   <div className="card-luxury text-center py-12">
                     <p className="text-slate-400">No reviews yet</p>
                     <p className="text-sm text-slate-500 mt-2">

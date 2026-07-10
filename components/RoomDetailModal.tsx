@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaWifi, FaTv, FaSnowflake, FaCoffee, FaBath, FaBed, FaUser, FaCalendar, FaUserFriends } from 'react-icons/fa';
 import Room360Viewer from './Room360Viewer';
+import { addBooking, getRooms } from '../lib/data-manager';
+import { useAuth } from '../lib/auth-context';
 
 interface Room {
   name: string;
@@ -23,6 +25,7 @@ interface RoomDetailModalProps {
 }
 
 export default function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
+  const { user } = useAuth();
   const [show360View, setShow360View] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingData, setBookingData] = useState({
@@ -56,6 +59,22 @@ export default function RoomDetailModal({ room, isOpen, onClose }: RoomDetailMod
     
     const total = calculateTotalPrice();
     const nights = getNumberOfNights();
+    
+    // Find room ID from data-manager
+    const rooms = getRooms();
+    const roomData = rooms.find(r => r.name === room.name);
+    const roomId = roomData?.id || Date.now().toString();
+    
+    // Save booking to data-manager
+    addBooking({
+      userId: user?.id || 'guest',
+      roomId: roomId,
+      checkIn: new Date(bookingData.checkIn),
+      checkOut: new Date(bookingData.checkOut),
+      guests: parseInt(bookingData.guests),
+      status: 'pending',
+      totalPrice: total,
+    });
     
     const bookingPayload = {
       roomName: room.name,

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="color: #555; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-            If you have any questions, please contact us at <strong>+231 XXX XXX XXX</strong> or reply to this email.
+            If you have any questions, please contact us at <strong>0770381510</strong> or reply to this email.
           </p>
           
           <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
